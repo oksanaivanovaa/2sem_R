@@ -1,0 +1,110 @@
+---
+title: "HW07"
+author: "Oksana Ivanova"
+output: html_document
+---
+
+```{r}
+set.seed(42)
+library(gapminder)
+library(ggplot2)
+library(datasets)
+library(dplyr)
+```
+#Data: Gapminder dataset, All years facet
+```{r}
+ggplot(gapminder, aes(x = gdpPercap, y = lifeExp, color = continent, size = pop)) +
+  geom_point() +
+  scale_x_log10() +
+  facet_wrap(~ year)
+```
+
+#Data: Airquality, transform, plot all measures by time
+```{r}
+head(airquality)
+str(airquality)
+View(airquality)
+```
+
+```{r}
+airquality$Day = factor(airquality$Day)
+airquality$Month = factor(airquality$Month)
+```
+
+```{r}
+str(airquality)
+summary(airquality)
+```
+
+```{r}
+#Remove NA values
+library(reshape2)
+aqLong = melt(airquality, id.vars=c("Month", "Day"), variable.name = "Measure", value.name="Value")
+aqLong$Measure = as.factor(aqLong$Measure)
+aqLong$Day = as.numeric(aqLong$Day)
+head(aqLong)
+```
+View(aqLong)
+
+```{r}
+ggplot(aqLong, aes(x = Day, y = Value, fill = Measure, colour = Measure)) +
+  geom_point(aes(x = Day, y = Value)) +
+  geom_line(aes(x = Day, y = Value)) +
+  facet_grid(Measure ~ Month, scales = "free") +
+  scale_x_continuous(breaks = seq(0, 31, by = 10))
+```
+
+#Some numeric data: distribution plots
+
+```{r}
+data("diamonds")
+df = diamonds
+head(df)
+```
+
+
+```{r}
+library(dplyr)
+df <- diamonds %>%
+  group_by(cut) %>%
+  summarise(counts = n())
+df
+```
+
+```{r}
+library(ggpubr)
+ggplot(df, aes(x = cut, y = counts)) +
+  geom_bar(fill = "#0073C2FF", stat = "identity") +
+  geom_text(aes(label = counts), vjust = -0.3) + 
+  theme_pubclean()
+```
+
+```{r}
+df = ChickWeight
+head(df)
+```
+
+```{r}
+ggplot(df, aes(x = weight, fill = Diet)) +
+  geom_histogram()
+```
+
+```{r}
+ggplot(df, aes(x = weight, fill = Diet)) +
+  geom_histogram(alpha =.5, position = "dodge") + 
+  geom_density(alpha = 0.3)
+```
+
+```{r}
+ggplot(df, aes(x = weight, fill = Diet)) +
+  geom_histogram(aes(y = ..density..), bins = 20, position = "identity", alpha = 0, color = "black") + 
+  geom_density(alpha = 0.5) +
+  facet_grid(.~ Diet)
+```
+```{r}
+ggplot(df, aes(x = Diet, y = weight, fill = Diet)) +
+  geom_boxplot() +
+  guides(fill = FALSE) +
+  geom_boxplot() +
+  stat_summary(fun.y = mean, geom = "point", shape = 6, size = 4)
+```
