@@ -1,10 +1,10 @@
 ---
 title: "HW07"
 author: "Oksana Ivanova"
-output: html_document
+output: pdf_document
 ---
 
-```{r}
+```{r warning=FALSE, message=FALSE}
 set.seed(42)
 library(gapminder)
 library(ggplot2)
@@ -23,7 +23,6 @@ ggplot(gapminder, aes(x = gdpPercap, y = lifeExp, color = continent, size = pop)
 ```{r}
 head(airquality)
 str(airquality)
-View(airquality)
 ```
 
 ```{r}
