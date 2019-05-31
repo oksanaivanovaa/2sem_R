@@ -2,16 +2,15 @@
 title: "HW06"
 author: "Oksana Ivanova"
 date: "3 May 2019"
-output: html_document
+output: pdf_document
 ---
 
-```{r}
+```{r warning=FALSE, message=FALSE}
 set.seed(42)
 library(gapminder)
 library(ggplot2)
 library(datasets)
 library(dplyr)
-library(Cairo)
 ```
 
 #Task#1
@@ -44,7 +43,7 @@ ggplot(iris_long, aes(x = Length, y = Width, fill = Part, size = Length + Width)
 ```{r}
 df <- gapminder %>%
   filter(year == 2007)
-CairoWin()
+
 ggplot(df, aes(x = gdpPercap, y = lifeExp, color = continent, size = pop)) +
   geom_point() + 
   scale_x_log10(breaks = c(1000, 10000))
@@ -137,4 +136,4 @@ gapminder %>%
   theme(axis.text.x = element_text(angle = -90, hjust = 0, vjust = 0.3)) +
   scale_x_continuous(breaks = seq(1952, 2007, by = 5))
 ```
-```
+
