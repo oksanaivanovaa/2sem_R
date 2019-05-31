@@ -1,0 +1,96 @@
+---
+title: "HW04"
+author: "Oksana Ivanova"
+date: "13 04 2019"
+output: pdf_document
+---
+
+# Exploring dataset
+```{r}
+set.seed(42)
+raw <- readRDS('weather.rds')
+head(raw)
+summary(raw)
+str(raw)
+
+```
+
+
+# Problems of the dataset:
+
+1) "X" collumn is just an index which is not needed for further analysis - have to be deleted.
+2) Split [measure] column into multiple columns
+3) It is better to assign our samples as [Year+month+day] from X number of columns.
+
+
+
+```{r}
+# Packages included
+library(tidyr)
+library(stringr)
+# Get rid of [X] column
+tidy <- raw[,-1]
+head(tidy)
+# Make dataframe from wide to long
+tidy <- gather(tidy, day, value, X1:X31)
+# Make dataframe from long to wide
+tidy = spread(tidy, measure, value)
+# Assign [Year+month+day] as samples names
+tidy$day = str_sub(tidy$day, 2, 3)
+tidy = unite(tidy, Date, year, month, day, sep = '_')
+head(tidy)
+```
+
+4) Then it was noticed that some samples have all NAs data because of unexisting days (February 30, etc). 
+   Also, the measurements in the end of the table are NAs as well.  
+
+
+```{r}
+tidy = na.omit(tidy)
+```
+
+5) Formatting of the numeric columns:
+
+```{r}
+tidy$PrecipitationIn = as.numeric(tidy$PrecipitationIn, na.string='T')
+# Make columns with values as numbers numeric
+tidy[,c(2,4:23)] = lapply(tidy[,c(2,4:23)], as.numeric)
+# Check the dataframe after formatting
+row.names(tidy) = 1:nrow(tidy)
+summary(tidy)
+```
+
+6) Make [Events] column  as factor
+
+```{r}
+
+tidy$Events = as.factor(tidy$Events)
+levels(tidy$Events)[1] = "Ordinary day"
+head(tidy)
+```
+
+7) Plot the numeric columns data
+
+```{r}
+boxplot(tidy[, c(2, 4:23)])
+```
+
+8) Obvious outlier was detected - the [Humidity] was 1000% at one point of measurements that seems to be unreal and also [speedMPH] looks like outlier. I decided to change only [Humidity] data for this row for more realistic value = 100%.
+ 
+```{r}
+tidy[135,6] = 100
+# Check the plot after additing
+boxplot(tidy[, c(2, 4:23)])
+```
+
+# Finally, the dataset seems to be clear and tidy after processing and ready for further analysis.
+
+Difference between "raw" and "tidy" dataframes.
+ 
+```{r}
+head(raw)
+head(tidy)
+```
+
+
+
