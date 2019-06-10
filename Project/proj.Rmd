@@ -1,0 +1,215 @@
+---
+title: "Project"
+author: "Oksana Ivanova"
+output: pdf_document
+---
+
+```{r warning=FALSE, message=FALSE}
+stringsAsFactors = F
+
+library(rapportools)
+library(data.table)
+library(DESeq2)
+library(limma)
+library(fgsea)
+library(BiocParallel)
+library(WGCNA)
+library(ggplot2)
+library(ggrepel)
+library(reshape)
+library(Biobase)
+library("AnnotationDbi")
+library("org.Hs.eg.db")
+library(devtools)
+library(rUtils)
+```
+#es raw
+```{r}
+#Download sample_tables
+samples1 <- fread("./featureCounts_counts.txt")
+samples2 <- fread("./3RNASeq_21.10.2018.cnt")
+head(samples1)
+head(samples2)
+```
+
+```{r}
+samples1$Geneid <- sub("\\..*", "", samples1$Geneid)
+samples1 <- unique(samples1, by = "Geneid")
+samples1[, entrez := mapIds(org.Hs.eg.db, keys=Geneid, keytype="ENSEMBL", column="ENTREZID")]
+samples1[, symbol := mapIds(org.Hs.eg.db, keys=Geneid, keytype="ENSEMBL", column="SYMBOL")]
+samples1$Chr <- NULL
+samples1$Start <- NULL
+samples1$End <- NULL
+samples1$Length <- NULL
+samples1$Strand <- NULL
+samples1 <- samples1[!is.na(samples1$symbol)]
+head(samples1)
+```
+
+```{r}
+samples2$Geneid <- sub("\\..*", "", samples2$V1)
+samples2$V1 <- NULL
+samples2 <- unique(samples2, by = "Geneid")
+samples2[, entrez := mapIds(org.Hs.eg.db, keys=Geneid, keytype="ENSEMBL", column="ENTREZID")]
+samples2[, symbol := mapIds(org.Hs.eg.db, keys=Geneid, keytype="ENSEMBL", column="SYMBOL")]
+samples2 <- samples2[!is.na(samples2$symbol)]
+head(samples2)
+```
+
+```{r}
+nrow(samples1)
+nrow(samples2)
+```
+#Download conditions
+```{r}
+conditions_full <- read.table("./conditions_full.txt", header=T,row.names=1)
+row.names(conditions_full) <- sub("\\.bam", "", row.names(conditions_full))
+head(conditions_full[,-1])
+```
+
+```{r}
+conditions1 <- conditions_full$Condition
+patients1 <- conditions_full$number
+conditions2 <- conditions_full[(samples2[,c(1:12)][ , order(row.names(conditions_full))]),3]
+patients2 <- conditions_full[(samples2[,c(1:12)][ , order(row.names(conditions_full))]),2]
+```
+
+#Almost create es
+```{r}
+res1 <- samples1
+
+res1$Geneid <- NULL
+res1$entrez <- NULL
+res1$symbol <- NULL
+rownames(res1) <- samples1$Geneid
+
+res2 <- samples2
+res2$Geneid <- NULL
+res2$entrez <- NULL
+res2$symbol <- NULL
+rownames(res2) <- samples2$Geneid 
+
+sum(res1)
+sum(res2)
+```
+
+```{r}
+inters_genes <- dplyr::intersect(row.names(res1),row.names(res2))
+length(inters_genes)
+```
+#es1
+```{r}
+es1 <- ExpressionSet(as.matrix(res1))
+fData(es1)$entrez <- samples1$entrez
+fData(es1)$geneid <- samples1$Geneid
+fData(es1)$symbol <- samples1$symbol
+rownames(es1) <- fData(es1)$geneid
+pData(es1) <- cbind(pData(es1), conditions1)
+pData(es1) <- cbind(pData(es1), patients1)
+
+es1
+```
+#es2
+```{r}
+es2 <- ExpressionSet(as.matrix(res2))
+fData(es2)$entrez <- samples2$entrez
+fData(es2)$geneid <- samples2$Geneid
+fData(es2)$symbol <- samples2$symbol
+rownames(es2) <- fData(es2)$geneid
+pData(es2) <- cbind(pData(es2), conditions2)
+pData(es2) <- cbind(pData(es2), patients2)
+
+es2
+```
+#DESeq 1
+```{r}
+cond1 <- "before"
+cond2 <- "after"
+
+dds1        <- DESeqDataSetFromMatrix(countData=exprs(es1),
+                                     colData=pData(es1),
+                                     design = ~ conditions1 + patients1)
+dds1      <- DESeq(dds1)
+plotDispEsts(dds1)
+res1        <- results(dds1, contrast=c("conditions1",cond2,cond1))
+res1 <- cbind(res1, fData(es1))
+resord1     <- as.data.frame(res1[order(res1$pvalue),])
+head(resord1)
+```
+#DESeq 2
+```{r}
+dds2        <- DESeqDataSetFromMatrix(countData=exprs(es2),
+                                     colData=pData(es2),
+                                     design = ~ conditions2 + patients2)
+dds2      <- DESeq(dds2)
+plotDispEsts(dds1)
+res2        <- results(dds2, contrast=c("conditions2",cond2,cond1))
+res2 <- cbind(res2, fData(es2))
+resord2     <- as.data.frame(res2[order(res2$pvalue),])
+head(resord2)
+```
+# For PCA
+```{r}
+es.norm1 <- es1
+exprs(es.norm1) <- getVarianceStabilizedData(dds1)
+es.norm1 <- es.norm1[head(order(apply(exprs(es.norm1), 1, mean), decreasing = T), 12000), ]
+
+es.norm2 <- es2
+exprs(es.norm2) <- getVarianceStabilizedData(dds2)
+es.norm2 <- es.norm2[head(order(apply(exprs(es.norm2), 1, mean), decreasing = T), 12000), ]
+```
+
+```{r}
+pcaStyle <-  list(
+  geom_text_repel(aes(label=patients1)),
+  aes(color=conditions1),
+  ggtitle("PCA for gene expression 1"))
+
+pcaPlot(es.norm1, 1, 2) + pcaStyle
+pcaPlot(es.norm1,2,3) + pcaStyle
+
+pcaStyle <-  list(
+  geom_text_repel(aes(label=patients2)),
+  aes(color=conditions2),
+  ggtitle("PCA for gene expression 2"))
+
+pcaPlot(es.norm2, 1, 2) + pcaStyle
+pcaPlot(es.norm2, 2, 3) + pcaStyle
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
