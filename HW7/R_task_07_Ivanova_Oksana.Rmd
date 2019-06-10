@@ -5,7 +5,6 @@ output: pdf_document
 ---
 
 ```{r warning=FALSE, message=FALSE}
-set.seed(42)
 library(gapminder)
 library(ggplot2)
 library(datasets)
@@ -43,7 +42,7 @@ aqLong$Measure = as.factor(aqLong$Measure)
 aqLong$Day = as.numeric(aqLong$Day)
 head(aqLong)
 ```
-View(aqLong)
+
 
 ```{r}
 ggplot(aqLong, aes(x = Day, y = Value, fill = Measure, colour = Measure)) +
@@ -54,29 +53,6 @@ ggplot(aqLong, aes(x = Day, y = Value, fill = Measure, colour = Measure)) +
 ```
 
 #Some numeric data: distribution plots
-
-```{r}
-data("diamonds")
-df = diamonds
-head(df)
-```
-
-
-```{r}
-library(dplyr)
-df <- diamonds %>%
-  group_by(cut) %>%
-  summarise(counts = n())
-df
-```
-
-```{r}
-library(ggpubr)
-ggplot(df, aes(x = cut, y = counts)) +
-  geom_bar(fill = "#0073C2FF", stat = "identity") +
-  geom_text(aes(label = counts), vjust = -0.3) + 
-  theme_pubclean()
-```
 
 ```{r}
 df = ChickWeight
@@ -96,10 +72,16 @@ ggplot(df, aes(x = weight, fill = Diet)) +
 
 ```{r}
 ggplot(df, aes(x = weight, fill = Diet)) +
-  geom_histogram(aes(y = ..density..), bins = 20, position = "identity", alpha = 0, color = "black") + 
+  geom_histogram(aes(y = ..density..), 
+                 bins = 20, 
+                 position = "identity", 
+                 alpha = 0, 
+                 color = "black") + 
   geom_density(alpha = 0.5) +
   facet_grid(.~ Diet)
 ```
+
+
 ```{r}
 ggplot(df, aes(x = Diet, y = weight, fill = Diet)) +
   geom_boxplot() +
