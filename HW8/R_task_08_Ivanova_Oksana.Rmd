@@ -1,0 +1,113 @@
+---
+title: "HW08"
+author: "Oksana Ivanova"
+output: pdf_document
+---
+
+```{r}
+load("~/Downloads/CHIS2009_reduced_2.Rdata")
+head(adult)
+summary(adult)
+```
+
+```{r warning=FALSE, message=FALSE}
+library(ggplot2)
+p <- ggplot(adult, aes(x = SRAGE_P, fill = factor(RBMI)))
+p + geom_histogram(binwidth = 1)
+```
+
+```{r warning=FALSE, message=FALSE}
+library(dplyr)
+
+df <- filter(adult, SRAGE_P < 85)
+summary(df)
+```
+
+```{r}
+p <- ggplot(adult, aes(x = BMI_P, fill = factor(RBMI)))
+p + geom_histogram(binwidth = 1)
+```
+
+```{r}
+df %>% filter(BMI_P >= 16) %>%
+  filter(BMI_P < 52) %>% 
+  head()
+```
+
+```{r warning=FALSE, message=FALSE}
+library(dplyr)
+df$RACEHPR2 <- factor(df$RACEHPR2, labels = c("Latino", "Asian", "African American", "White"))
+levels(df$RACEHPR2)
+head(df)
+```
+
+
+```{r}
+library(dplyr)
+df$RBMI <- factor(df$RBMI, labels = c("Under", "Normal", "Over", "Obese"))
+levels(df$RBMI)
+head(df)
+```
+
+```{r}
+ggplot(df, aes(x = SRAGE_P, fill = factor(RBMI))) +
+  geom_histogram(binwidth = 1) + 
+  facet_grid(RBMI ~.) 
+```
+
+#Color with another palette
+```{r}
+BMI_fill <- scale_fill_brewer("BMI Category", palette = "Reds")
+strip <- theme(strip.text.y = element_blank()) 
+ggplot(df, aes(x = SRAGE_P, fill = factor(RBMI))) + 
+  geom_histogram(binwidth = 1) + 
+  facet_grid(RBMI ~.) +
+  BMI_fill + theme_classic() + strip
+```
+
+```{r}
+BMI_fill <- scale_fill_brewer("BMI Category", palette = "Reds")
+ggplot(df, aes(x = SRAGE_P, fill = factor(RBMI))) + 
+  geom_histogram(binwidth = 1) + 
+  facet_grid(RBMI ~.) +
+  BMI_fill + theme_classic()
+```
+
+#Proportional histogram
+```{r}
+ggplot(df, aes (x = SRAGE_P, fill= factor(RBMI))) + 
+  geom_histogram(aes(y = ..count../sum(..count..)), 
+                 binwidth = 1, 
+                 position = "fill") +
+  BMI_fill
+```
+
+#Combine facet & proportional histogram
+```{r}
+ggplot(df, aes(x = SRAGE_P, fill = as.factor(RBMI))) + 
+  geom_histogram(aes(y = ..count../sum(..count..)), 
+                 binwidth = 1, 
+                 position = "fill") + 
+  facet_grid(RBMI ~.) +
+  BMI_fill + theme_classic() + strip
+```
+
+
+#Frequency table
+```{r}
+proportion <- table(df$RBMI, df$SRAGE_P) %>% apply(2, function(x) x/sum(x))
+```
+
+
+```{r}
+library(reshape2)
+df_prop <- melt(proportion)
+names(df_prop) <- c("FILL", "Age", "value")
+head(df_prop)
+ggplot(df_prop, aes(x = Age, y = value, fill = FILL)) +
+  geom_col(position = "stack") +
+  BMI_fill + 
+  facet_grid(rows = vars(FILL)) +
+  theme_classic() + strip
+
+```
