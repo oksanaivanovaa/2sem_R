@@ -1,0 +1,71 @@
+---
+title: "HW10"
+author: "Oksana Ivanova"
+output: pdf_document
+---
+
+```{r warning=FALSE, message=FALSE}
+set.seed(42)
+library(dplyr)
+library(ggplot2)
+data <- readRDS("~/Downloads/anscombe.rds")
+head(data)
+```
+
+```{r}
+data %>% ggplot(aes(x, y, color = as.factor(set))) +
+          geom_point() +
+          facet_wrap(.~set)
+```
+
+```{r}
+df1 <- data %>% 
+  group_by(set) %>% 
+  mutate(mean.x = mean(x), sd.x = sd(x))
+df2 <- data %>% 
+  group_by(set) %>% 
+  mutate(mean.y = mean(y), sd.y = sd(y))
+```
+
+```{r}
+data <- merge(df1, df2) 
+head(data)
+```
+
+```{r warning=FALSE, message=FALSE}
+library(plyr)
+sdata <- ddply(data, c("set"), summarise, 
+               mean.x = mean(x), 
+               mean.y = mean(y), 
+               sd.x = sd(x), 
+               sd.y = sd(y)
+) 
+sdata
+
+```
+
+```{r}
+ddply(data, "set", summarise, corr=cor(x, y),
+      corspm = cor(x,y, method = "spearman"), 
+      p.value = cor.test(x,y)$p.value)
+```
+
+```{r}
+data %>% ggplot(aes(x, y, color = as.factor(set))) + 
+  geom_point() +
+  geom_smooth(color="blue", size = 0.5, method="lm") + 
+  facet_wrap(.~set)
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
