@@ -1,0 +1,321 @@
+---
+title: "HW11"
+author: "Oksana Ivanova"
+output: pdf_document
+---
+
+```{r}
+data <- read.csv("~/Documents/ITMO/2sem/R_stat/R_ITMO/AirQualityUCI.csv", header = TRUE, sep = ";", dec=",")
+head(data)              
+```
+
+```{r}
+str(data)
+summary(data)
+```
+
+```{r}
+library(dplyr)
+dt <- data %>% 
+  select(-c(X, X.1)) %>% 
+  na.omit()
+head(dt)
+summary(dt)
+```
+#Here is a lot of -200 and -200.0 values that we replace with NA's
+```{r}
+#column NMHC.GT. is almost NAs values so let's get rid of it:
+dt$NMHC.GT. <- NULL
+dt <- na_if(dt, -200) %>% 
+  na.omit()
+summary(dt)
+```
+
+
+```{r warning=FALSE, message=FALSE}
+library(ggplot2)
+dt[,-c(1:2)] %>%  boxplot(names = FALSE) 
+axis(1, labels=names(dt[,-c(1:2)]), at=1:12, las=2)
+```
+
+
+```{r}
+# To see the data distribution:
+library(DataExplorer)
+plot_histogram(dt)
+plot_density(dt)
+#Looks OK, without outliers
+```
+
+```{r}
+dt[, c(3:14)] <- lapply(dt[,c(3:14)], as.numeric)
+str(dt)
+#also create data.frame with only numeric data (exclude Date and Time)
+dt_new <- dt[,-c(1:2)]
+```
+
+#OK, this is tidy data. Lets investigate dependences/correlations.
+```{r}
+# Correlation matrix:
+library(corrplot)
+dt_new %>%  cor(use="pairwise.complete.obs") %>% corrplot(order = "hclust")
+```
+
+```{r}
+#Enother way
+library(GGally)
+```
+
+```{r}
+ggcorr(dt_new, nbreaks = 4, 
+       label = TRUE, 
+       hjust = 0.8)
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+#Variable C6H6 has small correlation with other variables!
+#more or less correlation is indicated with CO.GT.
+```
+
+```{r}
+# Find the best model for prediction:
+lmMod <- lm(C6H6.GT. ~ . , data = dt_new)
+selectedMod <- step(lmMod)
+summary(selectedMod)
+```
+
+```{r}
+#Try to understand degree of linearity between RH output and other input features
+#plot all X-features against output variable C6H6.GT:
+lm1 <- lm(C6H6.GT. ~ CO.GT., data = dt_new)
+summary(lm1)
+
+ggplot(lm1, aes(x = CO.GT., y = C6H6.GT.)) +
+  geom_point() +
+  geom_smooth(method = 'lm') +
+  geom_line(aes(y = .fitted), color = "red", size = 1)
+ 
+```
+
+```{r}
+lm2 <- lm(C6H6.GT. ~ PT08.S1.CO., data = dt_new)
+summary(lm2)
+ggplot(lm2, aes(x = PT08.S1.CO., y = C6H6.GT.)) +
+  geom_point() +
+  geom_smooth(method = lm) +
+  geom_line(aes(y = .fitted), color = "red", size = 1)
+```
+
+
+```{r}
+lm3 <- lm(C6H6.GT. ~ PT08.S2.NMHC., data = dt_new)
+summary(lm3)
+ggplot(lm3, aes(x = PT08.S2.NMHC., y = C6H6.GT.)) +
+  geom_point() +
+  geom_smooth(method = lm) +
+  geom_line(aes(y = .fitted), color = "red", size = 1)
+```
+
+```{r}
+lm4 <- lm(C6H6.GT. ~ NOx.GT., data = dt_new)
+summary(lm4)
+ggplot(lm4, aes(x = NOx.GT., y = C6H6.GT.)) +
+  geom_point() +
+  geom_smooth(method = lm) +
+  geom_line(aes(y = .fitted), color = "red", size = 1)
+
+```
+
+```{r}
+lm5 <- lm(C6H6.GT. ~ PT08.S3.NOx., data = dt_new)
+summary(lm5)
+ggplot(lm5, aes(x = PT08.S3.NOx., y = C6H6.GT.)) +
+  geom_point() +
+  geom_smooth(method = lm) +
+  geom_line(aes(y = .fitted), color = "red", size = 1)
+
+```
+
+```{r}
+lm6 <- lm(C6H6.GT. ~ NO2.GT., data = dt_new)
+summary(lm6)
+ggplot(lm6, aes(x = NO2.GT., y = C6H6.GT.)) +
+  geom_point() +
+  geom_smooth(method = lm) +
+  geom_line(aes(y = .fitted), color = "red", size = 1)
+
+
+```
+
+```{r}
+lm7 <- lm(C6H6.GT. ~ PT08.S4.NO2., data = dt_new)
+summary(lm7)
+ggplot(lm7, aes(x = PT08.S4.NO2., y = C6H6.GT.)) +
+  geom_point() +
+  geom_smooth(method = lm) +
+  geom_line(aes(y = .fitted), color = "red", size = 1)
+
+```
+
+```{r}
+lm8 <- lm(C6H6.GT. ~ PT08.S5.O3., data = dt_new)
+summary(lm8)
+ggplot(lm8, aes(x = PT08.S5.O3., y = C6H6.GT.)) +
+  geom_point() +
+  geom_smooth(method = lm) +
+  geom_line(aes(y = .fitted), color = "red", size = 1)
+
+
+```
+
+```{r}
+lm9 <- lm(C6H6.GT. ~ RH, data = dt_new)
+summary(lm9)
+ggplot(lm9, aes(x = RH, y = C6H6.GT.)) +
+  geom_point() +
+  geom_smooth(method = lm) +
+  geom_line(aes(y = .fitted), color = "red", size = 1)
+
+```
+
+```{r}
+lm10 <- lm(C6H6.GT. ~ AH, data = dt_new)
+summary(lm10)
+ggplot(lm10, aes(x = AH, y = C6H6.GT.)) +
+  geom_point() +
+  geom_smooth(method = lm) +
+  geom_line(aes(y = .fitted), color = "red", size = 1)
+```
+
+
+
+```{r}
+ggplot(lmMod$model, aes_string(x = names(lmMod$model)[2], y = names(lmMod$model)[1])) + 
+  geom_point() +
+  geom_smooth(method = "lm", col = "red") +
+  labs(title = paste("Adj R2 = ",signif(summary(lmMod)$adj.r.squared, 5),
+                     "Intercept =",signif(lmMod$coef[[1]],5 ),
+                     " Slope =",signif(lmMod$coef[[2]], 5),
+                     " P =",signif(summary(lmMod)$coef[2,4], 5)))
+f <- summary(lmMod)$fstatistic
+pf(f[1], f[2], f[3], lower.tail = F)
+#this is pvalue!!
+```
+
+
+# Now we choose ~CO.GT. variable as good predictor for our model
+# Lets create train-test for it and plot
+```{r}
+
+```
+
+
+```{r}
+# Prepare data for prediction and model training (75%):
+set.seed(42) 
+sample <- sample.int(n = nrow(dt_new), size = floor(.75*nrow(dt_new)))
+train <- dt_new[sample,]
+test  <- dt_new[-sample,]
+```
+
+```{r}
+new_mod <- lm(data = train, C6H6.GT. ~ CO.GT.)
+summary(new_mod)
+```
+
+```{r}
+ggplot(data = train, aes(x = CO.GT., y = C6H6.GT.)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+
+```{r}
+pred <- predict(new_mod, newdata = test)
+head(pred)
+```
+
+
+```{r}
+test$C6H6.GT.pred <- pred
+head(test)
+```
+
+```{r}
+#train plot
+ggplot(train, aes(x = CO.GT., y = C6H6.GT.)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "red" ) +
+  geom_point(data = test, aes(y = C6H6.GT.), color = "blue") +
+  theme_bw() +
+  labs(title = paste("Adj R2 = ",signif(summary(new_mod)$adj.r.squared, 5),
+                     "Intercept =",signif(new_mod$coef[[1]],5 ),
+                     " Slope =",signif(new_mod$coef[[2]], 5),
+                     " P =",signif(summary(new_mod)$coef[2,4], 5)))
+
+```
+
+```{r}
+# predicted plot
+ggplot(train, aes(x = CO.GT., y = C6H6.GT.)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "red" ) +
+  geom_point(data = test, aes(y = C6H6.GT.pred), color = "green") +
+  labs(title = paste("Adj R2 = ",signif(summary(new_mod)$adj.r.squared, 5),
+                     "Intercept =",signif(new_mod$coef[[1]],5 ),
+                     " Slope =",signif(new_mod$coef[[2]], 5),
+                     " P =",signif(summary(new_mod)$coef[2,4], 5)))
+```
+
+
+```{r}
+ggplot(train, aes(x = CO.GT., y = C6H6.GT.)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "red" ) +
+  geom_point(data = test, aes(y = C6H6.GT.), color = "blue") +
+  geom_point(data = test, aes(y = C6H6.GT.pred), color = "green") +
+  labs(title = paste("Adj R2 = ",signif(summary(new_mod)$adj.r.squared, 5),
+                     "Intercept =",signif(new_mod$coef[[1]],5 ),
+                     " Slope =",signif(new_mod$coef[[2]], 5),
+                     " P =",signif(summary(new_mod)$coef[2,4], 5)))
+```
+
+```{r}
+ggplot(test, aes(x = CO.GT., y = C6H6.GT.)) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "red" ) +
+  geom_point(data = test, aes(y = C6H6.GT.pred), color = "green") +
+  labs(title = paste("Adj R2 = ",signif(summary(new_mod)$adj.r.squared, 5),
+                     "Intercept =",signif(new_mod$coef[[1]],5 ),
+                     " Slope =",signif(new_mod$coef[[2]], 5),
+                     " P =",signif(summary(new_mod)$coef[2,4], 5)))
+```
+
+
+
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
